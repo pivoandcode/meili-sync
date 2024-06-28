@@ -18,7 +18,7 @@ class MeiliSyncCommand extends Command
      *
      * @var string
      */
-    protected $signature = 'meili-sync {postType?}';
+    protected $signature = 'meilisearch:sync {postType?}';
 
     /**
      * The console command description.
@@ -70,7 +70,8 @@ class MeiliSyncCommand extends Command
         $posts = new \WP_Query([
             'post_type' => $postType,
             'posts_per_page' => 100,
-            'offset' => $offset
+            'post_status' => 'any',
+            'offset' => $offset,
         ]);
 
         while($posts->have_posts()){
@@ -106,7 +107,7 @@ class MeiliSyncCommand extends Command
         }
 
         spin(
-            function(){ $this->callSilently('queue:work', ['--memory' => 1024, '--once' => true]); },
+            function(){ $this->callSilently('queue:work', ['--memory' => 1024, '--stop-when-empty' => true]); },
             'Workers are active...'
         );
 
