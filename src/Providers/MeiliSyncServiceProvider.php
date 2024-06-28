@@ -4,7 +4,6 @@ namespace PivoAndCode\MeiliSync\Providers;
 
 use Illuminate\Support\ServiceProvider;
 use PivoAndCode\MeiliSync\Actions\SyncPostAction;
-use PivoAndCode\MeiliSync\Console\MeiliSyncCommand;
 use PivoAndCode\MeiliSync\MeiliSync;
 use WP_Post;
 
@@ -58,7 +57,8 @@ class MeiliSyncServiceProvider extends ServiceProvider
         );
 
         $this->commands([
-            \PivoAndCode\MeiliSync\Console\MeiliSyncCommand::class
+            \PivoAndCode\MeiliSync\Console\MeiliSyncCommand::class,
+            \PivoAndCode\MeiliSync\Console\MeiliDeleteCommand::class
         ]);
 
         $this->app->make('MeiliSync');

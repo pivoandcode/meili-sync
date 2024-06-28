@@ -2,10 +2,8 @@
 
 namespace PivoAndCode\MeiliSync\Console;
 
-use Illuminate\Support\Facades\Artisan;
 use PivoAndCode\MeiliSync\Actions\SyncPostAction;
 use Roots\Acorn\Console\Commands\Command;
-use Symfony\Component\Console\Helper\ProgressBar;
 use function Laravel\Prompts\select;
 use function Laravel\Prompts\confirm;
 use function Laravel\Prompts\progress;
@@ -25,7 +23,7 @@ class MeiliSyncCommand extends Command
      *
      * @var string
      */
-    protected $description = 'My custom Acorn command.';
+    protected $description = 'Syncs a post type with Meilisearch';
 
     /**
      * Execute the console command.
