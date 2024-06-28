@@ -2,12 +2,14 @@
 
 namespace PivoAndCode\MeiliSync\Console;
 
+use Illuminate\Support\Facades\Artisan;
 use PivoAndCode\MeiliSync\Actions\SyncPostAction;
 use Roots\Acorn\Console\Commands\Command;
 use Symfony\Component\Console\Helper\ProgressBar;
 use function Laravel\Prompts\select;
 use function Laravel\Prompts\confirm;
 use function Laravel\Prompts\progress;
+use function Laravel\Prompts\spin;
 
 class MeiliSyncCommand extends Command
 {
@@ -48,27 +50,31 @@ class MeiliSyncCommand extends Command
             return;
         }
 
-        $count = collect((array) wp_count_posts($postType))->sum(fn($status) => $status);
+        $count = collect((array) wp_count_posts($postType))->reduce(function($sum, $count, $key){
+            if ( in_array($key, ['auto-draft', 'trash'])  ){
+                return $sum;
+            }
+
+            return ((int) $count) + $sum;
+        }, 0);
+
         $offset = 0;
 
-        $bar = $this->output->createProgressBar($count);
+        $progress = progress(
+            label: "Starting the reindex for the $postType post type.",
+            steps: $count
+        );
 
-        ProgressBar::setFormatDefinition('custom', ' %current%/%max% [%bar%] %message%');
-
-        $bar->setFormat('custom');
-        $bar->setMessage("Starting the reindex for the $postType post type.");
-        $bar->start();
+        $progress->start();
 
         $posts = new \WP_Query([
-           'post_type' => 'any',
-           'posts_per_page' => 500,
-           'offset' => $offset
+            'post_type' => $postType,
+            'posts_per_page' => 100,
+            'offset' => $offset
         ]);
 
         while($posts->have_posts()){
             foreach ( $posts->get_posts() as $key => $post ){
-                sleep(1);
-
                 app()->make(SyncPostAction::class)
                      ->handle($post);
 
@@ -77,20 +83,33 @@ class MeiliSyncCommand extends Command
                    $count - ($offset + $key) - 1
                 );
 
-                $bar->setMessage($message);
-                $bar->advance();
+                $progress->label($message);
+                $progress->advance();
             }
 
-            $offset =+ 500;
+            $offset =+ 100;
 
             $posts = new \WP_Query([
-                'post_type' => 'any',
+                'post_type' => $postType,
                 'posts_per_page' => 500,
                 'offset' => $offset
             ]);
         }
 
-        $bar->setMessage("Finished");
-        $bar->finish();
+        $progress->label("Finished");
+        $progress->finish();
+
+        $startsWorkers = confirm("Do you want to start the queue worker in order to process the sync?", false);
+
+        if (! $startsWorkers ){
+            return;
+        }
+
+        spin(
+            function(){ $this->callSilently('queue:work', ['--memory' => 1024, '--once' => true]); },
+            'Workers are active...'
+        );
+
+        $this->line("Syncing for post type $postType finished.");
     }
 }
