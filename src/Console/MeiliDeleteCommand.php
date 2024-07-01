@@ -5,6 +5,7 @@ namespace PivoAndCode\MeiliSync\Console;
 use Illuminate\Contracts\Console\PromptsForMissingInput;
 use Meilisearch\Client;
 use PivoAndCode\MeiliSync\Actions\DeleteIndexAction;
+use PivoAndCode\MeiliSync\Jobs\DeleteIndexJob;
 use Roots\Acorn\Console\Commands\Command;
 use function Laravel\Prompts\select;
 use function Laravel\Prompts\confirm;
@@ -43,9 +44,9 @@ class MeiliDeleteCommand extends Command implements PromptsForMissingInput
             return;
         }
 
-        app(DeleteIndexAction::class)->handle($postType);
+        DeleteIndexJob::dispatch($postType);
 
-        $this->line("Deleting post type $postType finished.");
+        $this->line("Deleting post type $postType is enqueued.");
     }
 
     protected function promptForMissingArgumentsUsing(): array

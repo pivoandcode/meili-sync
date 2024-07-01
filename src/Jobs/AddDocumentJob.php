@@ -18,12 +18,8 @@ class AddDocumentJob implements ShouldQueue {
     public function __construct(private array $document, private string $index){}
 
     public function handle(){
-        Log::warning(json_encode( $this->document ));
-
-        $test = $this->getOrCreateIndex($this->index)
+        $this->getOrCreateIndex($this->index)
              ->addDocumentsJson(json_encode([$this->document]), 'ID');
-
-        Log::warning(json_encode($test));
     }
 
     private function getOrCreateIndex(string $index): Indexes {
